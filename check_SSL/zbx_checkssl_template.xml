@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2021-06-29T04:04:10Z</date>
+    <groups>
+        <group>
+            <name>Zabbix servers</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>check_ssl</template>
+            <name>check_ssl</name>
+            <description>Check expiry date cert witch url macros {$URLS} &#13;
+Example: exapmple1.com exapmple2.com exapmple3.com </description>
+            <groups>
+                <group>
+                    <name>Zabbix servers</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>check SSL</name>
+                </application>
+            </applications>
+            <discovery_rules>
+                <discovery_rule>
+                    <name>checkSSL</name>
+                    <key>check.SSL[{$URLS}]</key>
+                    <delay>3h</delay>
+                    <description>Создает items из url</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>Check {#URL}  {#EXDATE}</name>
+                            <key>check.SSL[{#URL}]</key>
+                            <delay>3h</delay>
+                            <history>30d</history>
+                            <trends>0</trends>
+                            <value_type>TEXT</value_type>
+                            <applications>
+                                <application>
+                                    <name>check SSL</name>
+                                </application>
+                            </applications>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$..[&quot;EXPIRY&quot;].max()</params>
+                                </step>
+                            </preprocessing>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;=5</expression>
+                                    <name>expire in 5 days {#URL}  {#EXDATE}</name>
+                                    <priority>DISASTER</priority>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;=60 and {last()}&gt;=30</expression>
+                                    <name>expire in 60 days {#URL}  {#EXDATE}</name>
+                                    <priority>INFO</priority>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>expiry 30 days {#URL}  {#EXDATE}</name>
+                                            <expression>{check_ssl:check.SSL[{#URL}].last()}&lt;=30 and {check_ssl:check.SSL[{#URL}].last()}&gt;=5</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;=30 and {last()}&gt;=5</expression>
+                                    <name>expiry 30 days {#URL}  {#EXDATE}</name>
+                                    <priority>AVERAGE</priority>
+                                    <description>  30 дней.</description>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>expire in 5 days {#URL}  {#EXDATE}</name>
+                                            <expression>{check_ssl:check.SSL[{#URL}].last()}&lt;=5</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                    </item_prototypes>
+                    <lld_macro_paths>
+                        <lld_macro_path>
+                            <lld_macro>{#URL}</lld_macro>
+                            <path>$..URL.first()</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#EXDATE}</lld_macro>
+                            <path>$..EXDATE.first()</path>
+                        </lld_macro_path>
+                    </lld_macro_paths>
+                </discovery_rule>
+            </discovery_rules>
+            <macros>
+                <macro>
+                    <macro>{$URLS}</macro>
+                    <value>exapmple1.com exapmple2.com exapmple3.com ... etc</value>
+                    <description> list URL </description>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+</zabbix_export>
